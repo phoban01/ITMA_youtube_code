@@ -3,6 +3,7 @@ import sys
 import json
 
 from apiclient.discovery import build
+from apiclient.errors import HttpError
 from oauth2client.file import Storage
 from oauth2client.client import AccessTokenRefreshError
 from oauth2client.client import OAuth2WebServerFlow
@@ -24,9 +25,14 @@ promotion_body = {"items":[
 	{
 		"id": {
 			"type": "website",
-			"websiteUrl": "www.itma.ie"
+			"websiteUrl": "http://www.itma.ie"
 		},
-		"customMessage": "Please Visit:"
+		"timing":{
+			"offsetMs":1000,
+			"type":"offsetFromStart"
+		},
+		"customMessage": "For more visit:",
+		"useSmartTiming":"true"
 	}
 ]}
 
@@ -47,7 +53,11 @@ def main():
 
 	itma_channel_id = itma_channel["id"]
 
-	youtube.channels().update(part="invideoPromotion",body={"invideoPromotion":promotion_body,"id":itma_channel_id}).execute()
+	try:
+		youtube.channels().update(part="invideoPromotion",body=dict(invideoPromotion=promotion_body,id=itma_channel_id)).execute()
+	except HttpError,e:
+	    print "An HTTP error %d occurred:\n%s" % (e.resp.status, e.content)
+
 
 	# check if there's been a change
 	channel_response = youtube.channels().list(mine=True,part="invideoPromotion",maxResults=1).execute()
